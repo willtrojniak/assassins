@@ -1,24 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Assassins</title>
-  <link href="{{ url_for('static', filename='css/style.css')}}" rel="stylesheet">
-</head>
+{% include "header.html" %}
 
 <body>
-  <h1>Assassins - Create Game</h1>
-  <form action="/games" method="post">
-    <input type="text" name="name" />
-    <button type="submit">Create New Game</button>
+  <h1 class="text-3xl font-bold text-center mb-4 mt-8">Assassins</h1>
+  <form action="/games" method="post" class="ml-auto mb-16 mr-auto w-fit">
+    <input id="name" type="text" name="name"
+      class="p-2 border border-slate-300 shadow shadow-gray-400 rounded w-48 focus:outline-none"
+      placeholder="Game Name" />
+    <button type="submit"
+      class="shadow shadow-gray-700 bg-blue-500 font-bold text-white p-2 duration-100 hover:cursor-pointer hover:bg-blue-700 rounded ml-auto">New
+      Game</button>
   </form>
-  <ul>
-    {% for game in games %}
-    <li>{{game.name}}</li>
-    {% endfor %}
-  </ul>
+  {% include "footer.html" %}
 </body>
 
 </html>

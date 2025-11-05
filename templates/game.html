@@ -1,109 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Assassins</title>
-  <link href="{{ url_for('static', filename='css/style.css')}}" rel="stylesheet">
-</head>
+{% include "header.html" %}
 
 <body>
-  <h1>Assassins - {{ game.name }} </h1>
-  <div>
-    <form action="{{ url_for('game.login_post_handler', game_id_param=id )}}" method="post">
-      <div>
-        <span>Username</span>
-        <input type="text" name="username" minlength="3" maxlength="32" />
-      </div>
-      <div>
-        <span>Password</span>
-        <input type="password" name="password" />
-      </div>
-      <button type="submit"> Log In </button>
+  <h1 class="text-3xl font-bold text-center mb-4 mt-8">Assassins - {{ game.name }} </h1>
+  <div class="text-center mb-4">
+    {% if user %}
+    <span>Welcome, <i>{{ user.username }}</i></span>
+    <br />
+    {% if user.eliminated %}
+    <i class="text-red-500"> You have been eliminated :(</i>
+    {% elif target %}
+    <span> Your target is: <i>{{ target.username }}</i></span>
+    {% endif %}
+    {% else %}
+    <span>Sign in to view your target</span>
+    {% endif %}
+  </div>
+  {% if user and user.id == game.owner and not game.started %}
+  <div class="text-center mb-4">
+    <form action="{{ url_for('game.start_game_handler', game_id_param=id )}}" method="post">
+      <button type="submit"
+        class="shadow shadow-gray-700 bg-blue-500 font-bold text-white p-2 duration-100 hover:cursor-pointer hover:bg-blue-700 rounded">
+        Start Game
+      </button>
+    </form>
+  </div>
+  {% endif %}
+  <div class="flex flex-row flex-wrap justify-around mb-16 gap-8 px-16">
+    <form action="{{ url_for('game.login_post_handler', game_id_param=id )}}" method="post"
+      class="border border-slate-200 shadow p-8 rounded flex flex-col">
+      <label for="username" class="font-light mb-1">Username</label>
+      <input id="username" type="text" name="username" minlength="3" maxlength="32"
+        class="border border-slate-300 p-1 text-gray-800 mb-4 shadow shadow-gray-400 rounded w-48 focus:outline-none" />
+      <label for="password" class="font-light mb-1">Password</label>
+      <input id="password " type="password" name="password"
+        class="border border-slate-300 p-1 text-gray-800 mb-4 shadow shadow-gray-400 rounded w-48 focus:outline-none" />
+      <button type="submit"
+        class="shadow shadow-gray-700 bg-blue-500 font-bold text-white p-2 duration-100 hover:cursor-pointer hover:bg-blue-700 rounded">
+        Log In </button>
       {% with messages = get_flashed_messages() %}
       {% for message in messages %}
       <span>{{ message }}</span>
       {% endfor %}
       {% endwith %}
     </form>
-  </div>
-  {% if user %}
-  <br />
-  <span>Signed in as: {{ user.username }}</span>
-  {% if target %}
-  <br />
-  <i> Your target is: {{ target.username }}</i>
-  {% elif user.eliminated %}
-  <br />
-  <i> You have been eliminated</i>
-  {% endif %}
-  {% else %}
-  <span>Not currently signed in</span>
-  {% endif %}
-  <br />
-  <div>
-    <h2>Leaderboard</h2>
-    <table>
-      <thead>
-        <th>Player</th>
-        <th>Eliminations</th>
-        {% if user.id == game.owner %}
-        <th>Actions</th>
-        {% endif %}
-      </thead>
-      <tbody>
-        {% for u in users %}
-        <tr>
-          <td>
-            {% if u.eliminated %}<s>{% endif%}
-              {{ u.username }}
-              {% if u.eliminated %}</s>{% endif%}
-            {% if u.id == game.owner %}
-            👑
-            {% endif %}
-          </td>
-          <td>
-            {{ u.elimination_count }}
-          </td>
-          {% if user and user.id == game.owner and not game.started %}
-          <td>
-            <form action="{{ url_for('game.remove_user_handler', game_id_param=id )}}" method="post">
-              <input type="hidden" name="user_id" value="{{u.id}}" />
-              <button type="submit">Remove</button>
-            </form>
-          </td>
+    <div>
+      <h2 class="font-bold text-xl mb-2">Leaderboard</h2>
+      <table class="border border-slate-200 shadow rounded">
+        <thead class="text-left border-b-slate-300 border-b">
+          <th class="p-2">Player</th>
+          <th class="p-2">Eliminations</th>
+          {% if user.id == game.owner %}
+          <th class="p-2">Actions</th>
           {% endif %}
-          {% if user and user.id == game.owner %}
-          <td>
-            {% if game.started and not u.eliminated %}
-            <form action="{{ url_for('game.eliminate_user_target_handler', game_id_param=id )}}" method="post">
-              <input type="hidden" name="user_id" value="{{u.id}}" />
-              <input type="hidden" name="elim_count" value="0" />
-              <button type="submit">Eliminate</button>
-            </form>
-            <form action="{{ url_for('game.eliminate_user_target_handler', game_id_param=id )}}" method="post">
-              <input type="hidden" name="user_id" value="{{u.id}}" />
-              <input type="hidden" name="elim_count" value="0" />
-              <button type="submit">Forfeit</button>
-            </form>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr class="even:bg-slate-200">
+            <td class="p-2">
+              {% if u.eliminated %}<s>{% endif%}
+                {{ u.username }}
+                {% if u.eliminated %}</s>{% endif%}
+            </td>
+            <td class="p-2 text-right">
+              {{ u.elimination_count }}
+            </td>
+            {% if user and user.id == game.owner and not game.started %}
+            <td>
+              <form action="{{ url_for('game.remove_user_handler', game_id_param=id )}}" method="post">
+                <input type="hidden" name="user_id" value="{{u.id}}" />
+                <button type="submit">Remove</button>
+              </form>
+            </td>
             {% endif %}
-          </td>
-          {% endif %}
-          {% endfor %}
-        </tr>
-      </tbody>
-    </table>
-    <ul>
-    </ul>
+            {% if user and user.id == game.owner %}
+            <td class="flex gap-1 p-2">
+              {% if game.started and not u.eliminated %}
+              <form action="{{ url_for('game.eliminate_user_target_handler', game_id_param=id )}}" method="post">
+                <input type="hidden" name="user_id" value="{{u.id}}" />
+                <input type="hidden" name="elim_count" value="1" />
+                <button type="submit"
+                  class="text-white rounded bg-red-700 py-1 px-2 hover:cursor-pointer hover:bg-red-900 duration-100">Eliminate</button>
+              </form>
+              <form action="{{ url_for('game.eliminate_user_target_handler', game_id_param=id )}}" method="post">
+                <input type="hidden" name="user_id" value="{{u.id}}" />
+                <input type="hidden" name="elim_count" value="0" />
+                <button type="submit"
+                  class="text-white rounded bg-gray-600 py-1 px-2 hover:cursor-pointer hover:bg-gray-700 duration-100">Forfeit</button>
+              </form>
+              {% endif %}
+            </td>
+            {% endif %}
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+      <ul>
+      </ul>
+    </div>
   </div>
-  {% if user and user.id == game.owner and not game.started %}
-  <div>
-    <form action="{{ url_for('game.start_game_handler', game_id_param=id )}}" method="post">
-      <button type="submit">Start Game</button>
-    </form>
-  </div>
-  {% endif %}
   {% include "footer.html" %}
 </body>
 

@@ -15,9 +15,7 @@ def create_game(name: str) -> uuid.UUID | None:
 
 @bp.get("/")
 def root_handler():
-    games = db.get_games()
-    print(games)
-    return flask.render_template('./index.html', games=games)
+    return flask.render_template('./index.html')
 
 @bp.post("/games")
 def create_game_handler():
