@@ -6,6 +6,7 @@ CREATE TABLE games (
   name TEXT NOT NULL,
   owner_id INTEGER,
   started INTEGER NOT NULL DEFAULT 0,
+  announcement TEXT,
 
   FOREIGN KEY(owner_id) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY(uuid, owner_id) REFERENCES users(game_id, id)

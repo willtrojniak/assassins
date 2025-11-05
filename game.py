@@ -133,6 +133,33 @@ def start_game_handler(game_id_param: str):
 
     return response
 
+@bp.post("/games/<game_id_param>/announcement")
+def set_announcement_handler(game_id_param: str):
+    game_id = util.str_to_uuid(game_id_param)
+    if not game_id:
+        flask.abort(404)
+    game = db.get_game_by_id(game_id)
+    if not game:
+        flask.abort(404)
+
+    msg = flask.request.form.get("msg",None,type=str)
+    response = flask.make_response(flask.redirect(flask.url_for('game.get_game_handler', game_id_param=game_id_param)))
+
+    token = flask.request.cookies.get("jwt_cookie")
+    user: typedefs.User | None = None
+
+    if token:
+        user_id = auth.read_bearer_token(token)
+        if user_id:
+            user = db.get_user_by_id(game_id, user_id)
+
+    if (not user) or user.id != game.owner:
+        flask.abort(201, "Unauthorized to set game announcement")
+
+
+    db.set_game_announcement(game_id, msg)
+    return response
+
 @bp.post("/games/<game_id_param>/delete_user")
 def remove_user_handler(game_id_param: str):
     game_id = util.str_to_uuid(game_id_param)

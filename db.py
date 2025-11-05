@@ -1,3 +1,4 @@
+from os import stat_result
 import sqlite3
 import uuid
 from flask import Flask, current_app, g
@@ -63,7 +64,8 @@ def get_games() -> list[typedefs.Game]:
                 id=uuid.UUID(bytes=row["uuid"]), 
                 name=row["name"], 
                 owner=row["owner_id"], 
-                started=row["started"]))
+                started=row["started"],
+                announcement=row["announcement"]))
     except sqlite3.Error as e:
         print(e)
     except Exception as e:
@@ -78,7 +80,12 @@ def get_game_by_id(id: uuid.UUID) -> typedefs.Game | None:
         cursor = db.execute("""SELECT * FROM games WHERE uuid = ?""", 
                    (id.bytes,))
         row = cursor.fetchone()
-        return typedefs.Game(uuid.UUID(bytes=row["uuid"]), row["name"], row["owner_id"], row["started"]) 
+        return typedefs.Game(
+            id=uuid.UUID(bytes=row["uuid"]),
+            name=row["name"],
+            owner=row["owner_id"], 
+            started=row["started"],
+            announcement=row["announcement"]) 
     except Exception as e:
         print(e)
     return None
@@ -95,6 +102,17 @@ def set_game_owner(game_id: uuid.UUID, user_id: int, overwrite: bool = False) ->
         db.rollback()
     return True 
 
+def set_game_announcement(game_id: uuid.UUID, msg: str | None) -> bool:
+    db = get_db()
+    try:
+        db.execute("""UPDATE games SET announcement = ?
+                    WHERE uuid = ?""", 
+                   (msg, game_id.bytes))
+        db.commit()
+    except sqlite3.Error as e:
+        print(e)
+        db.rollback()
+    return True 
 
 
 def create_user(game_id: uuid.UUID, username: str, password_hash: bytes) -> bool:

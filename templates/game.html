@@ -57,13 +57,32 @@
       {% endwith %}
     </form>
     <div>
+      <h2 class="font-bold text-xl mb-2">Announcements</h2>
+      <div class="border border-slate-200 shadow p-4 rounded w-76 text-gray-800">
+        {% if game.announcement %}
+        <p class="whitespace-pre-line">{{ game.announcement }}</p>
+        {% else %}
+        <i class="text-sm text-gray-600">There are no announcements at this time</i>
+        {% endif %}
+        {% if user and user.id == game.owner %}
+        <form class="mt-2" action="{{url_for('game.set_announcement_handler', game_id_param=id)}}" method="post">
+          <textarea rows="3" name="msg"
+            class="border border-slate-300 p-1 mb-4 shadow shadow-gray-400 rounded w-full focus:outline-none"></textarea>
+          <button type="submit"
+            class="shadow shadow-gray-700 bg-blue-500 font-bold text-white p-2 duration-100 hover:cursor-pointer hover:bg-blue-700 rounded">
+            Update </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    <div>
       <h2 class="font-bold text-xl mb-2">Leaderboard</h2>
       <table class="border border-slate-200 shadow rounded">
         <thead class="text-left border-b-slate-300 border-b">
-          <th class="p-2">Player</th>
-          <th class="p-2">Eliminations</th>
+          <th class="p-4">Player</th>
+          <th class="p-4">Eliminations</th>
           {% if user.id == game.owner %}
-          <th class="p-2">Actions</th>
+          <th class="p-4">Actions</th>
           {% endif %}
         </thead>
         <tbody>
