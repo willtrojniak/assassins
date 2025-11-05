@@ -1,3 +1,4 @@
+import re
 import click
 import flask
 import uuid
@@ -44,6 +45,8 @@ def create_game_cmd(name: str):
 @bp.get("/games/<game_id_param>")
 def get_game_handler(game_id_param: str):
     game_id = util.str_to_uuid(game_id_param)
+    if not game_id:
+        flask.abort(404)
     game = db.get_game_by_id(game_id)
     users = db.get_users_by_game(game_id)
     if not game:
@@ -59,8 +62,6 @@ def get_game_handler(game_id_param: str):
             user = db.get_user_by_id(game_id, user_id)
             if user and user.target_user_id:
                 target = db.get_user_by_id(game_id, user.target_user_id)
-    else:
-        print("Not logged in")
 
     return flask.render_template('./game.html', 
                                  id=game_id_param, 
@@ -73,24 +74,40 @@ def get_game_handler(game_id_param: str):
 @bp.post("/games/<game_id_param>/login")
 def login_post_handler(game_id_param: str):
     game_id = util.str_to_uuid(game_id_param)
-    username = flask.request.form["username"]
-    password = flask.request.form["password"]
-
-    user = users.signup_or_login(game_id, username, password)
-
+    if not game_id:
+        flask.abort(404)
     response = flask.make_response(flask.redirect(flask.url_for('game.get_game_handler', game_id_param=game_id_param)))
 
+    username = flask.request.form.get("username", "", type=str)
+    password = flask.request.form.get("password", "", type=str)
+
+
+    u_match = re.match(r"^[A-z]{3,}$", username)
+    p_match = re.match(r"(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])(?=\S+$).{8,20}", password)
+
+    if not u_match or not p_match:
+        if not u_match:
+            flask.flash("Username must only contain A-z and be at least 3 characters in length", category="username")
+        if not p_match:
+            flask.flash("Password must be of length 8-20 and contain an uppercase, lowercase and special character", category="password")
+        return response
+    
+    user = users.signup_or_login(game_id, username, password)
     if not user:
-        flask.flash("Incorrect username or password. Try again")
-    else:
-        token = auth.create_bearer_token(user.id)
-        response.set_cookie('jwt_cookie', token)
+        flask.flash("Incorrect username or password.", "sign-in")
+        return response
+
+    token = auth.create_bearer_token(user.id)
+    response.set_cookie('jwt_cookie', token)
 
     return response
 
 @bp.post("/games/<game_id_param>/start")
 def start_game_handler(game_id_param: str):
     game_id = util.str_to_uuid(game_id_param)
+    if not game_id:
+        flask.abort(404)
+
     game = db.get_game_by_id(game_id)
     if not game:
         flask.abort(404)
@@ -119,6 +136,9 @@ def start_game_handler(game_id_param: str):
 @bp.post("/games/<game_id_param>/delete_user")
 def remove_user_handler(game_id_param: str):
     game_id = util.str_to_uuid(game_id_param)
+    if not game_id:
+        flask.abort(404)
+
     target_user_id = flask.request.form.get("user_id",0,type=int)
     game = db.get_game_by_id(game_id)
     if not game:
@@ -144,6 +164,9 @@ def remove_user_handler(game_id_param: str):
 @bp.post("/games/<game_id_param>/eliminate_user")
 def eliminate_user_target_handler(game_id_param: str):
     game_id = util.str_to_uuid(game_id_param)
+    if not game_id:
+        flask.abort(404)
+
     target_user_id = flask.request.form.get("user_id",0,type=int)
     elim_count = flask.request.form.get("elim_count",0,type=int)
     game = db.get_game_by_id(game_id)

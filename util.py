@@ -13,8 +13,11 @@ def check_pwd(plaintext: bytes, hash: bytes) -> bool:
 def uuid_to_str(id: uuid.UUID) -> str:
     return base64.urlsafe_b64encode(id.bytes).decode()
 
-def str_to_uuid(id: str) -> uuid.UUID:
-    return uuid.UUID(bytes = base64.urlsafe_b64decode(id))
+def str_to_uuid(id: str) -> uuid.UUID | None:
+    try:
+        return uuid.UUID(bytes = base64.urlsafe_b64decode(id))
+    except Exception:
+        return None
 
 
 def gen_targets(n: int) -> list[int]:

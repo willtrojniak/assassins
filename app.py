@@ -18,7 +18,7 @@ def create_app() -> flask.Flask:
 
     @app.errorhandler(404)
     def _(_):
-        return "wut", 400
+        return flask.render_template('not-found.html'), 404
 
 
     return app
