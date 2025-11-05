@@ -28,34 +28,37 @@
     {% endif %}
     {% endif %}
   </div>
-  <div class="flex flex-row flex-wrap justify-center mb-16 gap-8 px-16">
-    <form action="{{ url_for('game.login_post_handler', game_id_param=id )}}" method="post"
-      class="border border-slate-200 shadow p-8 rounded flex flex-col">
-      <label for="username" class="font-light mb-1">Username</label>
-      <input id="username" autocomplete="off" type="text" name="username" pattern="^[A-z]{3,}$"
-        class="border border-slate-300 p-1 text-gray-800 mb-4 shadow shadow-gray-400 rounded w-48 focus:outline-none" />
-      {% with messages = get_flashed_messages(False, "username") %}
-      {% for message in messages %}
-      <i class="wrap-normal text-xs font-light w-48 text-red-900 mb-4">{{ message }}</i>
-      {% endfor %}
-      {% endwith %}
-      <label for="pwd" class="font-light mb-1">Password</label>
-      <input id="pwd" type="password" name="password"
-        class="border border-slate-300 p-1 text-gray-800 mb-4 shadow shadow-gray-400 rounded w-48 focus:outline-none" />
-      {% with messages = get_flashed_messages(False, "password") %}
-      {% for message in messages %}
-      <i class="wrap-normal text-xs font-light mb-4 w-48 text-red-900">{{ message }}</i>
-      {% endfor %}
-      {% endwith %}
-      <button type="submit"
-        class="shadow shadow-gray-700 bg-blue-500 font-bold text-white p-2 duration-100 hover:cursor-pointer hover:bg-blue-700 rounded">
-        Log In </button>
-      {% with messages = get_flashed_messages(False, "sign-in") %}
-      {% for message in messages %}
-      <i class="wrap-normal text-xs font-light w-48 text-red-900">{{ message }}</i>
-      {% endfor %}
-      {% endwith %}
-    </form>
+  <div class="flex flex-row flex-wrap justify-center items-start mb-16 gap-8 px-16">
+    <div>
+      <h2 class="font-bold text-xl mb-2">Sign Up / Log In</h2>
+      <form action="{{ url_for('game.login_post_handler', game_id_param=id )}}" method="post"
+        class="border border-slate-200 shadow p-8 rounded flex flex-col">
+        <label for="username" class="font-light mb-1">Username</label>
+        <input id="username" autocomplete="off" type="text" name="username" pattern="^[A-z]{3,}$"
+          class="border border-slate-300 p-1 text-gray-800 mb-4 shadow shadow-gray-400 rounded w-48 focus:outline-none" />
+        {% with messages = get_flashed_messages(False, "username") %}
+        {% for message in messages %}
+        <i class="wrap-normal text-xs font-light w-48 text-red-900 mb-4">{{ message }}</i>
+        {% endfor %}
+        {% endwith %}
+        <label for="pwd" class="font-light mb-1">Password</label>
+        <input id="pwd" type="password" name="password"
+          class="border border-slate-300 p-1 text-gray-800 mb-4 shadow shadow-gray-400 rounded w-48 focus:outline-none" />
+        {% with messages = get_flashed_messages(False, "password") %}
+        {% for message in messages %}
+        <i class="wrap-normal text-xs font-light mb-4 w-48 text-red-900">{{ message }}</i>
+        {% endfor %}
+        {% endwith %}
+        <button type="submit"
+          class="shadow shadow-gray-700 bg-blue-500 font-bold text-white p-2 duration-100 hover:cursor-pointer hover:bg-blue-700 rounded">
+          Log In </button>
+        {% with messages = get_flashed_messages(False, "sign-in") %}
+        {% for message in messages %}
+        <i class="wrap-normal text-xs font-light w-48 text-red-900">{{ message }}</i>
+        {% endfor %}
+        {% endwith %}
+      </form>
+    </div>
     <div>
       <h2 class="font-bold text-xl mb-2">Announcements</h2>
       <div class="border border-slate-200 shadow p-4 rounded w-76 text-gray-800">
