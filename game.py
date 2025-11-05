@@ -1,3 +1,4 @@
+import click
 import flask
 import uuid
 import auth
@@ -17,17 +18,28 @@ def create_game(name: str) -> uuid.UUID | None:
 def root_handler():
     return flask.render_template('./index.html')
 
-@bp.post("/games")
-def create_game_handler():
-    game_name = flask.request.form["name"]
-    game_id = create_game(game_name)
+@click.command('create-game')
+@click.argument('name')
+def create_game_cmd(name: str):
+    game_id = create_game(name)
     if not game_id:
-        flask.flash("Failed to create game. Please try again.")
-        return flask.redirect('/')
+        click.echo("Failed to create game", err=True)
+        return
 
-    url_id = util.uuid_to_str(game_id)
+    click.echo(util.uuid_to_str(game_id))
 
-    return flask.redirect(f"/games/{url_id}")
+
+# @bp.post("/games")
+# def create_game_handler():
+#     game_name = flask.request.form["name"]
+#     game_id = create_game(game_name)
+#     if not game_id:
+#         flask.flash("Failed to create game. Please try again.")
+#         return flask.redirect('/')
+#
+#     url_id = util.uuid_to_str(game_id)
+#
+#     return flask.redirect(f"/games/{url_id}")
 
 @bp.get("/games/<game_id_param>")
 def get_game_handler(game_id_param: str):

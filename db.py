@@ -3,6 +3,7 @@ import uuid
 from flask import Flask, current_app, g
 import click
 
+import game
 import typedefs
 
 connection = sqlite3.connect('db.sqlite')
@@ -34,6 +35,7 @@ def init_db_cmd():
 def init_app(app: Flask):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_cmd)
+    app.cli.add_command(game.create_game_cmd)
 
 def create_game(name: str) -> uuid.UUID | None:
     db = get_db()
