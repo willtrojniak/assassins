@@ -1,10 +1,15 @@
+import os
 import flask
 import db
 import game
+import dotenv
+
+dotenv.load_dotenv()
+
 
 def create_app() -> flask.Flask:
     app = flask.Flask(__name__)
-    app.secret_key = "secret_key"
+    app.secret_key = os.getenv("FLASK_SECRET")
 
     # Register db shutdown funcs
     db.init_app(app)
