@@ -14,21 +14,21 @@
     {% elif target %}
     <span> Your target is: <i>{{ target.username }}</i></span>
     {% endif %}
-    {% else %}
-    <span>Sign in to view your target</span>
     {% endif %}
-  </div>
-  {% if user and user.id == game.owner and not game.started %}
-  <div class="text-center mb-4">
+    <br />
+    {% if not game.started %}
+    <i class="font-light underline">The game is still accepting players</i>
+    {% if user and user.id == game.owner %}
     <form action="{{ url_for('game.start_game_handler', game_id_param=id )}}" method="post">
       <button type="submit"
-        class="shadow shadow-gray-700 bg-blue-500 font-bold text-white p-2 duration-100 hover:cursor-pointer hover:bg-blue-700 rounded">
+        class="mt-2 shadow shadow-gray-700 bg-blue-500 font-bold text-white p-2 duration-100 hover:cursor-pointer hover:bg-blue-700 rounded">
         Start Game
       </button>
     </form>
+    {% endif %}
+    {% endif %}
   </div>
-  {% endif %}
-  <div class="flex flex-row flex-wrap justify-around mb-16 gap-8 px-16">
+  <div class="flex flex-row flex-wrap justify-center mb-16 gap-8 px-16">
     <form action="{{ url_for('game.login_post_handler', game_id_param=id )}}" method="post"
       class="border border-slate-200 shadow p-8 rounded flex flex-col">
       <label for="username" class="font-light mb-1">Username</label>
@@ -68,14 +68,16 @@
               {{ u.elimination_count }}
             </td>
             {% if user and user.id == game.owner and not game.started %}
-            <td>
+            <td class="p-2">
               <form action="{{ url_for('game.remove_user_handler', game_id_param=id )}}" method="post">
                 <input type="hidden" name="user_id" value="{{u.id}}" />
-                <button type="submit">Remove</button>
+                <button type="submit"
+                  class="text-white rounded bg-gray-600 py-1 px-2 hover:cursor-pointer hover:bg-gray-700 duration-100">
+                  Remove
+                </button>
               </form>
             </td>
-            {% endif %}
-            {% if user and user.id == game.owner %}
+            {% elif user and user.id == game.owner %}
             <td class="flex gap-1 p-2">
               {% if game.started and not u.eliminated %}
               <form action="{{ url_for('game.eliminate_user_target_handler', game_id_param=id )}}" method="post">
