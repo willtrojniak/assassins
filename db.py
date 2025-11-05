@@ -10,7 +10,7 @@ connection = sqlite3.connect('db.sqlite')
 
 def get_db() -> sqlite3.Connection:
     if 'db' not in g:
-        g.db = sqlite3.connect('db.sqlite')
+        g.db = sqlite3.connect('./data/db.sqlite')
         g.db.execute("PRAGMA foreign_keys = ON;")
         g.db.row_factory = sqlite3.Row
 
