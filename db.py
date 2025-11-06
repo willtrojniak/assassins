@@ -1,4 +1,5 @@
 from os import stat_result
+import random
 import sqlite3
 import uuid
 from flask import Flask, current_app, g
@@ -26,6 +27,20 @@ def close_db(_=None):
 def init_db(db: sqlite3.Connection) -> None:
     with current_app.open_resource('schema.sql') as schema:
         db.executescript(schema.read().decode('utf8'))
+    data = [
+        ("made short work of", "didn’t survive the night."),
+        ("said “goodnight” to", "forgot how gravity works."),
+        ("made early retirement plans for", "ignored a “wet floor” sign."),
+        ("sent a strongly worded bullet to", "forgot to check their corners."),
+        ("offered severance pay to", "proved that safety harnesses matter."),
+        ("proved that hesitation kills — just ask", "overestimated their balance."),
+        ("cleared the schedule of", "didn’t make it to the credits."),
+        ("closed the case on", "fell for their own trap."),
+        ("retired", "forgot to reload."),
+        ("terminated", "cut the wrong wire."),
+    ]
+    db.executemany("""INSERT INTO log_messages (elim, forfeit) VALUES (?,?)""", data)
+    db.commit()
 
 @click.command('init-db')
 def init_db_cmd():
@@ -279,10 +294,41 @@ def eliminate_user(game_id: uuid.UUID, target_id: int, elim_count: int):
             SET target_user_id = ?, elimination_count = elimination_count + ?
             WHERE game_id = ? AND id = ?
         """, (target.target_user_id, elim_count, game_id.bytes, assassin.id))
+        cursor = db.execute("""SELECT COUNT(*) FROM log_messages""")
+        row_count = cursor.fetchone()[0]
+        msg_id = random.randint(1, row_count)
+        db.execute("""
+            INSERT INTO logs (game_id, user_id, target_id, msg_id) VALUES (?, ?, ?, ?)
+        """, (game_id.bytes, assassin.id if elim_count else None, target_id, msg_id))
         db.commit()
     except sqlite3.Error as e:
         print(e)
     except Exception as e:
         print(e)
 
+def get_game_logs(game_id: uuid.UUID) -> list[typedefs.Log]:
+    l = []
+    db = get_db()
+
+    try:
+        cursor = db.execute("""
+            SELECT users.username AS user, targets.username AS target, log_messages.* FROM logs
+            LEFT JOIN users ON users.game_id = logs.game_id AND users.id = logs.user_id
+            LEFT JOIN users AS targets ON targets.game_id = logs.game_id AND targets.id = logs.target_id
+            LEFT JOIN log_messages ON logs.msg_id = log_messages.id
+            WHERE logs.game_id = ?
+            ORDER BY logs.ts ASC""", 
+                   (game_id.bytes,))
+        for row in cursor.fetchall():
+            l.append(typedefs.Log(
+                user=row["user"], 
+                target=row["target"],
+                elim_msg=row["elim"],
+                forfeit_msg=row["forfeit"]))
+    except sqlite3.Error as e:
+        print(e)
+    except Exception as e:
+        print(e)
+
+    return l
 

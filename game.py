@@ -63,12 +63,15 @@ def get_game_handler(game_id_param: str):
             if user and user.target_user_id:
                 target = db.get_user_by_id(game_id, user.target_user_id)
 
+    logs = db.get_game_logs(game_id)
+
     return flask.render_template('./game.html', 
                                  id=game_id_param, 
                                  game=game,
                                  users=users,
                                  user=user,
-                                 target=target)
+                                 target=target,
+                                 logs=logs)
     
 
 @bp.post("/games/<game_id_param>/login")

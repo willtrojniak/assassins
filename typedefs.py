@@ -17,3 +17,17 @@ class User:
         self.target_user_id = target_user_id
         self.eliminated = eliminated
         self.elimination_count = elimination_count
+
+class Log:
+    def __init__(self, user: str | None, target: str, elim_msg: str, forfeit_msg: str):
+        self.user = user
+        self.target = target
+        self.elim_msg = elim_msg
+        self.forfeit_msg = forfeit_msg
+
+    def to_str(self) -> str:
+        if self.user:
+            return f"{self.user} {self.elim_msg} {self.target}"
+        else:
+            return f"{self.target} {self.forfeit_msg}"
+

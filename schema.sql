@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS logs;
+DROP TABLE IF EXISTS log_messages;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS games;
 
@@ -28,4 +30,25 @@ CREATE TABLE users (
   UNIQUE (game_id, username),
   UNIQUE (game_id, id)
 );
+
+CREATE TABLE log_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  elim TEXT NOT NULL,
+  forfeit TEXT NOT NULL
+);
+
+CREATE TABLE logs (
+  game_id BLOB(16) NOT NULL,
+  user_id INTEGER,
+  target_id INTEGER NOT NULL,
+  msg_id INTEGER NOT NULL,
+  ts TEXT NOT NULL DEFAULT (datetime('now')),
+
+  PRIMARY KEY(game_id, user_id, target_id),
+  FOREIGN KEY(game_id) REFERENCES games(uuid) ON DELETE CASCADE,
+  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY(target_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY(msg_id) REFERENCES log_messages(id)
+);
+
 
