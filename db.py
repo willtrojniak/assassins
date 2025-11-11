@@ -144,6 +144,23 @@ def create_user(game_id: uuid.UUID, username: str, password_hash: bytes) -> bool
         db.rollback()
     return True 
 
+def update_user_pwd(game_id: uuid.UUID, username: str, password_hash: bytes) -> bool:
+    db = get_db()
+
+    try:
+        db.execute("""UPDATE USERS 
+        SET password = ? 
+        WHERE username = ? AND game_id = ?""", 
+                   (password_hash, username, game_id.bytes))
+        db.commit()
+    except sqlite3.IntegrityError as _:
+        db.rollback()
+        return False
+    except sqlite3.Error as _:
+        db.rollback()
+    return True 
+
+
 def remove_user(game_id: uuid.UUID, user_id: int) -> bool:
     db = get_db()
 

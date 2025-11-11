@@ -4,6 +4,8 @@ import db
 import game
 import dotenv
 
+import users
+
 dotenv.load_dotenv()
 
 
@@ -13,6 +15,7 @@ def create_app() -> flask.Flask:
 
     # Register db shutdown funcs
     db.init_app(app)
+    users.init_app(app)
     
     # Register Blueprints
     app.register_blueprint(game.bp)
