@@ -11,9 +11,6 @@ import functools
 import db
 from typedefs import Account
 
-AUTH_CLIENT_ID = os.getenv("AUTH_CLIENT_ID", "<NONE>")
-AUTH_CLIENT_SECRET = os.getenv("AUTH_CLIENT_SECRET", "<NONE>")
-AUTH_REDIRECT_URI = os.getenv("AUTH_REDIRECT_URI", "<NONE>")
 AUTH_SCOPE = "openid profile email"
 
 def create_bearer_token(user_id: str) -> str:
@@ -68,9 +65,9 @@ def oauth_begin():
     
     auth_url = (
         f"{oidc_auth_endpoint()}"
-        f"?client_id={AUTH_CLIENT_ID}"
+        f"?client_id={os.getenv("AUTH_CLIENT_ID", "<NONE>")}"
         f"&response_type=code"
-        f"&redirect_uri={AUTH_REDIRECT_URI}"
+        f"&redirect_uri={os.getenv("AUTH_REDIRECT_URI", "<NONE>")}"
         f"&response_mode=query"
         f"&scope={AUTH_SCOPE}"
         f"&state={state}"
@@ -92,8 +89,8 @@ def oauth_cb():
     token_response = requests.post(
         oidc_token_endpoint(),
         data={
-            "client_id": AUTH_CLIENT_ID,
-            "client_secret": AUTH_CLIENT_SECRET,
+            "client_id": os.getenv("AUTH_CLIENT_ID", "<NONE>"),
+            "client_secret": os.getenv("AUTH_CLIENT_SECRET", "<NONE>"),
             "grant_type": "authorization_code",
             "code": code,
             "redirect_uri": AUTH_REDIRECT_URI,
@@ -128,7 +125,7 @@ def oauth_cb():
             id_token,
             public_key,
             algorithms=["RS256"],
-            audience=AUTH_CLIENT_ID,
+            audience=os.getenv("AUTH_CLIENT_ID", "<NONE>"),
             issuer=oidc_issuer(),
         )
 
