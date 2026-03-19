@@ -3,3 +3,4 @@ bcrypt
 pyjwt
 python-dotenv
 requests
+cryptography
