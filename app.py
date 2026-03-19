@@ -7,11 +7,9 @@ import dotenv
 
 import users
 
-dotenv.load_dotenv()
-
-
 def create_app() -> flask.Flask:
     app = flask.Flask(__name__)
+    dotenv.load_dotenv()
     app.secret_key = os.getenv("FLASK_SECRET")
 
     # Register db shutdown funcs
