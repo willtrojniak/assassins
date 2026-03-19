@@ -93,7 +93,7 @@ def oauth_cb():
             "client_secret": os.getenv("AUTH_CLIENT_SECRET", "<NONE>"),
             "grant_type": "authorization_code",
             "code": code,
-            "redirect_uri": AUTH_REDIRECT_URI,
+            "redirect_uri": os.getenv("AUTH_REDIRECT_URI", "<NONE>"),
             "scope": AUTH_SCOPE,
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},
