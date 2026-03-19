@@ -1,5 +1,4 @@
 import base64
-from types import MappingProxyType
 import uuid
 import bcrypt
 import random
@@ -38,10 +37,10 @@ def gen_targets(n: int) -> list[int]:
     assigned[ptr] = 0
     return assigned
 
-def gen_target_maps(ids: list[int]) -> list[tuple[int, int]]:
+def gen_target_maps(ids: list[str]) -> list[tuple[str, str]]:
     mapping = gen_targets(len(ids))
 
-    mapped = []
+    mapped : list[tuple[str, str]] = []
 
     for i in range(len(mapping)):
         mapped.append((ids[i], ids[mapping[i]]))

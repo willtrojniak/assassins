@@ -1,6 +1,7 @@
 import os
 import flask
 import db
+import auth
 import game
 import dotenv
 
@@ -18,6 +19,7 @@ def create_app() -> flask.Flask:
     users.init_app(app)
     
     # Register Blueprints
+    app.register_blueprint(auth.bp)
     app.register_blueprint(game.bp)
 
     @app.errorhandler(400)

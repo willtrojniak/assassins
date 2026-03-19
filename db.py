@@ -1,4 +1,3 @@
-from os import stat_result
 import random
 import sqlite3
 import uuid
@@ -7,8 +6,6 @@ import click
 
 import game
 import typedefs
-
-connection = sqlite3.connect('db.sqlite')
 
 def get_db() -> sqlite3.Connection:
     if 'db' not in g:
@@ -67,7 +64,7 @@ def create_game(name: str) -> uuid.UUID | None:
     return None
 
 def get_games() -> list[typedefs.Game]:
-    u = []
+    u : list[typedefs.Game] = []
     db = get_db()
 
     try:
@@ -105,7 +102,7 @@ def get_game_by_id(id: uuid.UUID) -> typedefs.Game | None:
         print(e)
     return None
 
-def set_game_owner(game_id: uuid.UUID, user_id: int, overwrite: bool = False) -> bool:
+def set_game_owner(game_id: uuid.UUID, user_id: str, overwrite: bool = False) -> bool:
     db = get_db()
     try:
         db.execute("""UPDATE games SET owner_id = ?
@@ -129,68 +126,30 @@ def set_game_announcement(game_id: uuid.UUID, msg: str | None) -> bool:
         db.rollback()
     return True 
 
-
-def create_user(game_id: uuid.UUID, username: str, password_hash: bytes) -> bool:
+def create_account(account: typedefs.Account):
     db = get_db()
-
     try:
-        db.execute("""INSERT INTO USERS (username, password, game_id) VALUES (?, ?, ?) """, 
-                   (username, password_hash, game_id.bytes))
+        db.execute("""INSERT INTO accounts (id, name, email) VALUES (?, ?, ?) """, 
+                   (account.id, account.name, account.email))
         db.commit()
-    except sqlite3.IntegrityError as _:
+        return id
+    except sqlite3.Error as e:
+        print(e)
         db.rollback()
-        return False
-    except sqlite3.Error as _:
-        db.rollback()
-    return True 
+    return None
 
-def update_user_pwd(game_id: uuid.UUID, username: str, password_hash: bytes) -> bool:
+def get_account_by_id(user_id: str) -> typedefs.Account | None:
     db = get_db()
-
-    try:
-        db.execute("""UPDATE USERS 
-        SET password = ? 
-        WHERE username = ? AND game_id = ?""", 
-                   (password_hash, username, game_id.bytes))
-        db.commit()
-    except sqlite3.IntegrityError as _:
-        db.rollback()
-        return False
-    except sqlite3.Error as _:
-        db.rollback()
-    return True 
-
-
-def remove_user(game_id: uuid.UUID, user_id: int) -> bool:
-    db = get_db()
-
-    try:
-        db.execute("""DELETE FROM users WHERE game_id = ? and id = ?""", 
-                   (game_id.bytes, user_id))
-        db.commit()
-    except sqlite3.IntegrityError as _:
-        db.rollback()
-        return False
-    except sqlite3.Error as _:
-        db.rollback()
-    return True 
-
-def get_user_by_username(game_id: uuid.UUID, username: str) -> typedefs.User | None:
-    db = get_db()
-
     try:
         cursor = db.execute("""
-            SELECT * FROM users 
-            WHERE username = ? AND game_id = ?""", 
-                   (username, game_id.bytes))
+            SELECT * FROM accounts 
+            WHERE id = ?""", 
+                   (user_id,))
         row = cursor.fetchone()
-        return typedefs.User(
+        return typedefs.Account(
             id=row["id"], 
-            username=row["username"],
-            password_hash=row["password"], 
-            target_user_id=row["target_user_id"],
-            eliminated=row["eliminated"],
-            elimination_count=row["elimination_count"])
+            name=row["name"],
+            email=row["email"])
     except sqlite3.Error as e:
         print(e)
     except Exception as e:
@@ -198,19 +157,50 @@ def get_user_by_username(game_id: uuid.UUID, username: str) -> typedefs.User | N
 
     return None
 
-def get_user_by_id(game_id: uuid.UUID, user_id: int) -> typedefs.User | None:
+def create_user(game_id: uuid.UUID, account_id: str) -> bool:
+    db = get_db()
+
+    try:
+        db.execute("""INSERT INTO USERS (account_id, game_id) VALUES (?, ?) """, 
+                   (account_id, game_id.bytes))
+        db.commit()
+    except sqlite3.IntegrityError as _:
+        db.rollback()
+        return False
+    except sqlite3.Error as _:
+        db.rollback()
+    return True 
+
+
+def remove_user(game_id: uuid.UUID, user_id: str) -> bool:
+    db = get_db()
+
+    try:
+        db.execute("""DELETE FROM users WHERE game_id = ? and account_id = ?""", 
+                   (game_id.bytes, user_id))
+        db.commit()
+    except sqlite3.IntegrityError as e:
+        print(e)
+        db.rollback()
+        return False
+    except sqlite3.Error as e:
+        print(e)
+        db.rollback()
+    return True 
+
+def get_user_by_id(game_id: uuid.UUID, user_id: str) -> typedefs.User | None:
     db = get_db()
 
     try:
         cursor = db.execute("""
-            SELECT * FROM users 
-            WHERE id = ? AND game_id = ?""", 
+            SELECT users.*, accounts.* FROM users 
+            LEFT JOIN accounts ON users.account_id = accounts.id
+            WHERE account_id = ? AND game_id = ?""", 
                    (user_id, game_id.bytes))
         row = cursor.fetchone()
         return typedefs.User(
             id=row["id"], 
-            username=row["username"],
-            password_hash=row["password"], 
+            name=row["name"],
             target_user_id=row["target_user_id"],
             eliminated=row["eliminated"],
             elimination_count=row["elimination_count"])
@@ -221,19 +211,19 @@ def get_user_by_id(game_id: uuid.UUID, user_id: int) -> typedefs.User | None:
 
     return None
 
-def get_user_by_target(game_id: uuid.UUID, target_id: int) -> typedefs.User | None:
+def get_user_by_target(game_id: uuid.UUID, target_id: str) -> typedefs.User | None:
     db = get_db()
 
     try:
         cursor = db.execute("""
-            SELECT * FROM users 
+            SELECT users.*, accounts.* FROM users 
+            LEFT JOIN accounts ON users.account_id = accounts.id
             WHERE target_user_id = ? AND game_id = ?""", 
                    (target_id, game_id.bytes))
         row = cursor.fetchone()
         return typedefs.User(
             id=row["id"], 
-            username=row["username"],
-            password_hash=row["password"], 
+            name=row["name"],
             target_user_id=row["target_user_id"],
             eliminated=row["eliminated"],
             elimination_count=row["elimination_count"])
@@ -245,20 +235,20 @@ def get_user_by_target(game_id: uuid.UUID, target_id: int) -> typedefs.User | No
     return None
 
 def get_users_by_game(game_id: uuid.UUID) -> list[typedefs.User]:
-    u = []
+    u : list[typedefs.User] = []
     db = get_db()
 
     try:
         cursor = db.execute("""
-            SELECT * FROM users 
+            SELECT users.*, accounts.* FROM users 
+            LEFT JOIN accounts ON users.account_id = accounts.id
             WHERE game_id = ?
-            ORDER BY eliminated ASC, elimination_count DESC, username ASC""", 
+            ORDER BY eliminated ASC, elimination_count DESC, name ASC""", 
                    (game_id.bytes,))
         for row in cursor.fetchall():
             u.append(typedefs.User(
                 id=row["id"], 
-                username=row["username"],
-                password_hash=row["password"], 
+                name=row["name"],
                 target_user_id=row["target_user_id"],
                 eliminated=row["eliminated"],
                 elimination_count=row["elimination_count"]))
@@ -269,7 +259,7 @@ def get_users_by_game(game_id: uuid.UUID) -> list[typedefs.User]:
 
     return u 
 
-def set_user_targets(game_id: uuid.UUID, mapping: list[tuple[int, int]]):
+def set_user_targets(game_id: uuid.UUID, mapping: list[tuple[str, str]]):
     db = get_db()
     data = [(e[1], game_id.bytes, e[0]) for e in mapping]
 
@@ -277,7 +267,7 @@ def set_user_targets(game_id: uuid.UUID, mapping: list[tuple[int, int]]):
         db.executemany("""
             UPDATE users
             SET target_user_id = ?
-            WHERE game_id = ? AND id = ?""", 
+            WHERE game_id = ? AND account_id = ?""", 
                    data)
         db.execute("""
             UPDATE games
@@ -290,7 +280,7 @@ def set_user_targets(game_id: uuid.UUID, mapping: list[tuple[int, int]]):
     except Exception as e:
         print(e)
 
-def eliminate_user(game_id: uuid.UUID, target_id: int, elim_count: int):
+def eliminate_user(game_id: uuid.UUID, target_id: str, elim_count: int):
     target = get_user_by_id(game_id, target_id)
     if not target or not target.target_user_id:
         return
@@ -304,12 +294,12 @@ def eliminate_user(game_id: uuid.UUID, target_id: int, elim_count: int):
         db.execute("""
             UPDATE users
             SET eliminated = 1, target_user_id = NULL
-            WHERE game_id = ? AND id = ?""", 
+            WHERE game_id = ? AND account_id = ?""", 
                    (game_id.bytes, target.id))
         db.execute("""
             UPDATE users 
             SET target_user_id = ?, elimination_count = elimination_count + ?
-            WHERE game_id = ? AND id = ?
+            WHERE game_id = ? AND account_id = ?
         """, (target.target_user_id, elim_count, game_id.bytes, assassin.id))
         cursor = db.execute("""SELECT COUNT(*) FROM log_messages""")
         row_count = cursor.fetchone()[0]
@@ -324,14 +314,14 @@ def eliminate_user(game_id: uuid.UUID, target_id: int, elim_count: int):
         print(e)
 
 def get_game_logs(game_id: uuid.UUID) -> list[typedefs.Log]:
-    l = []
+    l : list[typedefs.Log] = []
     db = get_db()
 
     try:
         cursor = db.execute("""
-            SELECT users.username AS user, targets.username AS target, log_messages.* FROM logs
-            LEFT JOIN users ON users.game_id = logs.game_id AND users.id = logs.user_id
-            LEFT JOIN users AS targets ON targets.game_id = logs.game_id AND targets.id = logs.target_id
+            SELECT accounts.name AS user, targets.name AS target, log_messages.* FROM logs
+            LEFT JOIN accounts ON accounts.id = logs.user_id
+            LEFT JOIN accounts AS targets ON targets.id = logs.target_id
             LEFT JOIN log_messages ON logs.msg_id = log_messages.id
             WHERE logs.game_id = ?
             ORDER BY logs.ts ASC""", 

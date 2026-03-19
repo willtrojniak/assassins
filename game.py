@@ -1,4 +1,3 @@
-import re
 import click
 import flask
 import uuid
@@ -53,13 +52,14 @@ def get_game_handler(game_id_param: str):
         flask.abort(404)
 
     token = flask.request.cookies.get("jwt_cookie")
+    account_id : str | None = None
     user: typedefs.User | None = None
     target: typedefs.User | None = None
 
     if token:
-        user_id = auth.read_bearer_token(token)
-        if user_id:
-            user = db.get_user_by_id(game_id, user_id)
+        account_id = auth.read_bearer_token(token)
+        if account_id:
+            user = db.get_user_by_id(game_id, account_id)
             if user and user.target_user_id:
                 target = db.get_user_by_id(game_id, user.target_user_id)
 
@@ -68,6 +68,7 @@ def get_game_handler(game_id_param: str):
     return flask.render_template('./game.html', 
                                  id=game_id_param, 
                                  game=game,
+                                 account_id=account_id,
                                  users=users,
                                  user=user,
                                  target=target,
@@ -81,27 +82,18 @@ def login_post_handler(game_id_param: str):
         flask.abort(404)
     response = flask.make_response(flask.redirect(flask.url_for('game.get_game_handler', game_id_param=game_id_param)))
 
-    username = flask.request.form.get("username", "", type=str)
-    password = flask.request.form.get("password", "", type=str)
+    token = flask.request.cookies.get("jwt_cookie")
+    account_id: str | None = None
+    if token:
+        account_id = auth.read_bearer_token(token)
 
+    if (not account_id):
+        flask.abort(201, "Unauthorized to register")
 
-    u_match = re.match(r"^[A-z]{3,}$", username)
-    p_match = re.match(r"(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])(?=\S+$).{8,20}", password)
-
-    if not u_match or not p_match:
-        if not u_match:
-            flask.flash("Username must only contain A-z and be at least 3 characters in length", category="username")
-        if not p_match:
-            flask.flash("Password must be of length 8-20 and contain an uppercase, lowercase and special character", category="password")
-        return response
-    
-    user = users.signup_or_login(game_id, username, password)
+    user = users.signup(game_id, account_id)
     if not user:
-        flask.flash("Incorrect username or password.", "sign-in")
+        flask.flash("Sign in failed.", "sign-in")
         return response
-
-    token = auth.create_bearer_token(user.id)
-    response.set_cookie('jwt_cookie', token)
 
     return response
 
@@ -169,7 +161,7 @@ def remove_user_handler(game_id_param: str):
     if not game_id:
         flask.abort(404)
 
-    target_user_id = flask.request.form.get("user_id",0,type=int)
+    target_user_id = flask.request.form.get("user_id","",type=str)
     game = db.get_game_by_id(game_id)
     if not game:
         flask.abort(404)
@@ -197,7 +189,7 @@ def eliminate_user_target_handler(game_id_param: str):
     if not game_id:
         flask.abort(404)
 
-    target_user_id = flask.request.form.get("user_id",0,type=int)
+    target_user_id = flask.request.form.get("user_id","",type=str)
     elim_count = flask.request.form.get("elim_count",0,type=int)
     game = db.get_game_by_id(game_id)
     if not game:
