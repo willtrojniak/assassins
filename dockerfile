@@ -1,4 +1,5 @@
 FROM python:3.14-slim-bookworm
+RUN apt-get update && apt-get install -y sqlite3
 
 WORKDIR /app
 
