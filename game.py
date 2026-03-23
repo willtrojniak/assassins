@@ -28,6 +28,14 @@ def create_game_cmd(name: str):
 
     click.echo(util.uuid_to_str(game_id))
 
+@click.command('reset-game')
+@click.argument('id')
+def reset_game_cmd(id: str):
+    game_id = util.str_to_uuid(id)
+    if not game_id:
+        click.echo("Invalid game id", err=True)
+        return
+    db.reset_game(game_id)
 
 # @bp.post("/games")
 # def create_game_handler():
@@ -62,6 +70,8 @@ def get_game_handler(game_id_param: str):
             user = db.get_user_by_id(game_id, account_id)
             if user and user.target_user_id:
                 target = db.get_user_by_id(game_id, user.target_user_id)
+
+    print("Target: ", target)
 
     logs = db.get_game_logs(game_id)
 

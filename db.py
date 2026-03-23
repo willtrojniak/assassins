@@ -44,11 +44,13 @@ def init_db_cmd():
     db = get_db()
     init_db(db)
     click.echo("Initialized the database")
+
     
 def init_app(app: Flask):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_cmd)
     app.cli.add_command(game.create_game_cmd)
+    app.cli.add_command(game.reset_game_cmd)
 
 def create_game(name: str) -> uuid.UUID | None:
     db = get_db()
@@ -338,4 +340,31 @@ def get_game_logs(game_id: uuid.UUID) -> list[typedefs.Log]:
         print(e)
 
     return l
+
+def reset_game(game_id: uuid.UUID):
+    db = get_db()
+
+    try:
+        db.execute("""
+        DELETE FROM logs
+        WHERE logs.game_id = ?
+        """,
+           (game_id.bytes,))
+        db.execute("""
+            UPDATE users SET
+            target_user_id = NULL,
+            eliminated = 0,
+            elimination_count = '0'
+            WHERE game_id = ?
+        """,
+            (game_id.bytes,))
+        db.execute("""
+            UPDATE games SET
+            started = 0
+            WHERE uuid = ?
+        """,
+           (game_id.bytes,))
+        db.commit()
+    except sqlite3.Error as e:
+        print(f"db::reset_game: {e}")
 
