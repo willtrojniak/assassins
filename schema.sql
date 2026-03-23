@@ -25,7 +25,7 @@ CREATE TABLE users (
   account_id TEXT PRIMARY KEY,
   game_id BLOB(16) NOT NULL,
 
-  target_user_id INTEGER, 
+  target_user_id TEXT, 
   eliminated INTEGER NOT NULL DEFAULT 0,
   elimination_count INTEGER NOT NULL DEFAULT 0, 
 
@@ -33,7 +33,7 @@ CREATE TABLE users (
   UNIQUE (game_id, target_user_id),
   FOREIGN KEY(account_id) REFERENCES accounts(id) ON DELETE CASCADE,
   FOREIGN KEY(game_id) REFERENCES games(uuid) ON DELETE CASCADE
-  -- FOREIGN KEY(game_id, target_user_id) REFERENCES users(game_id, account_id)
+  FOREIGN KEY(game_id, target_user_id) REFERENCES users(game_id, account_id)
 );
 
 CREATE TABLE log_messages (
