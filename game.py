@@ -216,6 +216,8 @@ def eliminate_user_target_handler(game_id_param: str):
             user = db.get_user_by_id(game_id, user_id)
 
     if (not game.started) or (not user) or user.id != game.owner:
+        user_name = user.name if user else "None"
+        print(f"User: <{user_name}> attempted to eliminate player")
         flask.abort(201, "Unauthorized to eliminate player")
 
 
