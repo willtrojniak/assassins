@@ -90,6 +90,48 @@ def get_games() -> list[typedefs.Game]:
 
     return u 
 
+def get_games_by_account(account_id: str) -> list[tuple[typedefs.Game, typedefs.User, typedefs.GameStats]]:
+    u : list[tuple[typedefs.Game, typedefs.User, typedefs.GameStats]] = []
+    db = get_db()
+
+    try:
+        cursor = db.execute("""
+            SELECT games.*, users.*, accounts.name AS account_name,
+                (SELECT COUNT(*) FROM users AS players
+                 WHERE players.game_id = games.uuid) AS player_count,
+                (SELECT COUNT(*) FROM users AS players
+                 WHERE players.game_id = games.uuid AND players.eliminated) AS eliminated_count
+            FROM users
+            JOIN games ON users.game_id = games.uuid
+            JOIN accounts ON users.account_id = accounts.id
+            WHERE users.account_id = ?
+            ORDER BY games.name""",
+                   (account_id,))
+        for row in cursor.fetchall():
+            u.append((
+                typedefs.Game(
+                    id=uuid.UUID(bytes=row["uuid"]),
+                    name=row["name"],
+                    owner=row["owner_id"],
+                    started=row["started"],
+                    announcement=row["announcement"]),
+                typedefs.User(
+                    id=row["account_id"],
+                    name=row["account_name"],
+                    target_user_id=row["target_user_id"],
+                    eliminated=row["eliminated"],
+                    elimination_count=row["elimination_count"]),
+                typedefs.GameStats(
+                    players=row["player_count"],
+                    alive=row["player_count"] - row["eliminated_count"],
+                    eliminated=row["eliminated_count"])))
+    except sqlite3.Error as e:
+        print(e)
+    except Exception as e:
+        print(e)
+
+    return u 
+
 def get_game_by_id(id: uuid.UUID) -> typedefs.Game | None:
     db = get_db()
 

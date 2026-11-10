@@ -16,7 +16,17 @@ def create_game(name: str) -> uuid.UUID | None:
 
 @bp.get("/")
 def root_handler():
-    return flask.render_template('./index.html')
+    token = flask.request.cookies.get("jwt_cookie")
+    account_id : str | None = None
+    games: list[tuple[str, typedefs.Game, typedefs.User, typedefs.GameStats]] = []
+
+    if token:
+        account_id = auth.read_bearer_token(token)
+        if account_id:
+            games = [(util.uuid_to_str(game.id), game, user, stats)
+                     for game, user, stats in db.get_games_by_account(account_id)]
+
+    return flask.render_template('./index.html', account_id=account_id, games=games)
 
 @click.command('create-game')
 @click.argument('name')
