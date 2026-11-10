@@ -39,7 +39,9 @@
               <a href="{{ url_for('game.get_game_handler', game_id_param=url_id) }}" class="underline text-blue-500">{{ game.name }}</a>
             </td>
             <td class="p-2">
-              {% if not game.started %}
+              {% if not user %}
+              <i class="text-gray-600">Organizer</i>
+              {% elif not game.started %}
               <i class="text-gray-600">Not started</i>
               {% elif user.eliminated %}
               <span class="text-red-500">Eliminated</span>

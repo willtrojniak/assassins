@@ -11,14 +11,14 @@ import util
 bp = flask.Blueprint('game', __name__)
 
 
-def create_game(name: str) -> uuid.UUID | None:
-    return db.create_game(name)
+def create_game(name: str, owner_id: str | None = None) -> uuid.UUID | None:
+    return db.create_game(name, owner_id)
 
 @bp.get("/")
 def root_handler():
     token = flask.request.cookies.get("jwt_cookie")
     account_id : str | None = None
-    games: list[tuple[str, typedefs.Game, typedefs.User, typedefs.GameStats]] = []
+    games: list[tuple[str, typedefs.Game, typedefs.User | None, typedefs.GameStats]] = []
 
     if token:
         account_id = auth.read_bearer_token(token)
@@ -30,8 +30,18 @@ def root_handler():
 
 @click.command('create-game')
 @click.argument('name')
-def create_game_cmd(name: str):
-    game_id = create_game(name)
+@click.option('--owner', 'owner_email', default=None,
+              help="Email of the organizer's account. They must have logged in once. Defaults to the first player to join.")
+def create_game_cmd(name: str, owner_email: str | None):
+    owner_id: str | None = None
+    if owner_email:
+        owner = db.get_account_by_email(owner_email)
+        if not owner:
+            click.echo(f"No account with email '{owner_email}'. They must log in once before owning a game.", err=True)
+            return
+        owner_id = owner.id
+
+    game_id = create_game(name, owner_id)
     if not game_id:
         click.echo("Failed to create game", err=True)
         return
@@ -84,6 +94,7 @@ def get_game_handler(game_id_param: str):
     print("Target: ", target)
 
     logs = db.get_game_logs(game_id)
+    is_owner = account_id is not None and account_id == game.owner
 
     return flask.render_template('./game.html', 
                                  id=game_id_param, 
@@ -92,6 +103,7 @@ def get_game_handler(game_id_param: str):
                                  users=users,
                                  user=user,
                                  target=target,
+                                 is_owner=is_owner,
                                  logs=logs)
     
 
@@ -131,14 +143,11 @@ def start_game_handler(game_id_param: str):
     response = flask.make_response(flask.redirect(flask.url_for('game.get_game_handler', game_id_param=game_id_param)))
 
     token = flask.request.cookies.get("jwt_cookie")
-    user: typedefs.User | None = None
-
+    account_id: str | None = None
     if token:
-        user_id = auth.read_bearer_token(token)
-        if user_id:
-            user = db.get_user_by_id(game_id, user_id)
+        account_id = auth.read_bearer_token(token)
 
-    if (not user) or user.id != game.owner:
+    if (not account_id) or account_id != game.owner:
         flask.abort(201, "Unauthorized to start game")
 
 
@@ -161,14 +170,11 @@ def set_announcement_handler(game_id_param: str):
     response = flask.make_response(flask.redirect(flask.url_for('game.get_game_handler', game_id_param=game_id_param)))
 
     token = flask.request.cookies.get("jwt_cookie")
-    user: typedefs.User | None = None
-
+    account_id: str | None = None
     if token:
-        user_id = auth.read_bearer_token(token)
-        if user_id:
-            user = db.get_user_by_id(game_id, user_id)
+        account_id = auth.read_bearer_token(token)
 
-    if (not user) or user.id != game.owner:
+    if (not account_id) or account_id != game.owner:
         flask.abort(201, "Unauthorized to set game announcement")
 
 
@@ -189,14 +195,11 @@ def remove_user_handler(game_id_param: str):
     response = flask.make_response(flask.redirect(flask.url_for('game.get_game_handler', game_id_param=game_id_param)))
 
     token = flask.request.cookies.get("jwt_cookie")
-    user: typedefs.User | None = None
-
+    account_id: str | None = None
     if token:
-        user_id = auth.read_bearer_token(token)
-        if user_id:
-            user = db.get_user_by_id(game_id, user_id)
+        account_id = auth.read_bearer_token(token)
 
-    if game.started or (not user) or user.id != game.owner:
+    if game.started or (not account_id) or account_id != game.owner:
         flask.abort(201, "Unauthorized to remove player")
 
 
@@ -218,16 +221,12 @@ def eliminate_user_target_handler(game_id_param: str):
     response = flask.make_response(flask.redirect(flask.url_for('game.get_game_handler', game_id_param=game_id_param)))
 
     token = flask.request.cookies.get("jwt_cookie")
-    user: typedefs.User | None = None
-
+    account_id: str | None = None
     if token:
-        user_id = auth.read_bearer_token(token)
-        if user_id:
-            user = db.get_user_by_id(game_id, user_id)
+        account_id = auth.read_bearer_token(token)
 
-    if (not game.started) or (not user) or user.id != game.owner:
-        user_name = user.name if user else "None"
-        print(f"User: <{user_name}> attempted to eliminate player")
+    if (not game.started) or (not account_id) or account_id != game.owner:
+        print(f"Account: <{account_id}> attempted to eliminate player")
         flask.abort(201, "Unauthorized to eliminate player")
 
 

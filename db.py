@@ -55,12 +55,12 @@ def init_app(app: Flask):
     app.cli.add_command(game.create_game_cmd)
     app.cli.add_command(game.reset_game_cmd)
 
-def create_game(name: str) -> uuid.UUID | None:
+def create_game(name: str, owner_id: str | None = None) -> uuid.UUID | None:
     db = get_db()
     try:
         id = uuid.uuid4()
-        db.execute("""INSERT INTO games (uuid, name) VALUES (?, ?) """, 
-                   (id.bytes, name))
+        db.execute("""INSERT INTO games (uuid, name, owner_id) VALUES (?, ?, ?) """, 
+                   (id.bytes, name, owner_id))
         db.commit()
         return id
     except sqlite3.Error as e:
@@ -90,8 +90,9 @@ def get_games() -> list[typedefs.Game]:
 
     return u 
 
-def get_games_by_account(account_id: str) -> list[tuple[typedefs.Game, typedefs.User, typedefs.GameStats]]:
-    u : list[tuple[typedefs.Game, typedefs.User, typedefs.GameStats]] = []
+def get_games_by_account(account_id: str) -> list[tuple[typedefs.Game, typedefs.User | None, typedefs.GameStats]]:
+    """Games the account plays in or organizes. The user is None when they only organize."""
+    u : list[tuple[typedefs.Game, typedefs.User | None, typedefs.GameStats]] = []
     db = get_db()
 
     try:
@@ -101,12 +102,12 @@ def get_games_by_account(account_id: str) -> list[tuple[typedefs.Game, typedefs.
                  WHERE players.game_id = games.uuid) AS player_count,
                 (SELECT COUNT(*) FROM users AS players
                  WHERE players.game_id = games.uuid AND players.eliminated) AS eliminated_count
-            FROM users
-            JOIN games ON users.game_id = games.uuid
-            JOIN accounts ON users.account_id = accounts.id
-            WHERE users.account_id = ?
+            FROM games
+            LEFT JOIN users ON users.game_id = games.uuid AND users.account_id = ?
+            LEFT JOIN accounts ON users.account_id = accounts.id
+            WHERE users.account_id IS NOT NULL OR games.owner_id = ?
             ORDER BY games.name""",
-                   (account_id,))
+                   (account_id, account_id))
         for row in cursor.fetchall():
             u.append((
                 typedefs.Game(
@@ -120,7 +121,7 @@ def get_games_by_account(account_id: str) -> list[tuple[typedefs.Game, typedefs.
                     name=row["account_name"],
                     target_user_id=row["target_user_id"],
                     eliminated=row["eliminated"],
-                    elimination_count=row["elimination_count"]),
+                    elimination_count=row["elimination_count"]) if row["account_id"] else None,
                 typedefs.GameStats(
                     players=row["player_count"],
                     alive=row["player_count"] - row["eliminated_count"],
@@ -200,6 +201,24 @@ def get_account_by_id(user_id: str) -> typedefs.Account | None:
     except sqlite3.Error as e:
         print(e)
     except Exception as e:
+        print(e)
+
+    return None
+
+def get_account_by_email(email: str) -> typedefs.Account | None:
+    db = get_db()
+    try:
+        cursor = db.execute("""
+            SELECT * FROM accounts 
+            WHERE email = ? COLLATE NOCASE""", 
+                   (email,))
+        row = cursor.fetchone()
+        if row:
+            return typedefs.Account(
+                id=row["id"], 
+                name=row["name"],
+                email=row["email"])
+    except sqlite3.Error as e:
         print(e)
 
     return None
