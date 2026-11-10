@@ -10,7 +10,7 @@ import typedefs
 
 def get_db() -> sqlite3.Connection:
     if 'db' not in g:
-        g.db = sqlite3.connect('./data/db.sqlite')
+        g.db = sqlite3.connect(current_app.config["DATABASE"])
         g.db.execute("PRAGMA foreign_keys = ON;")
         g.db.row_factory = sqlite3.Row
 
@@ -43,7 +43,7 @@ def init_db(db: sqlite3.Connection) -> None:
 @click.command('init-db')
 @click.confirmation_option(prompt="This deletes ALL games and players. Continue?")
 def init_db_cmd():
-    os.makedirs('./data', exist_ok=True)
+    os.makedirs(os.path.dirname(current_app.config["DATABASE"]), exist_ok=True)
     db = get_db()
     init_db(db)
     click.echo("Initialized the database")

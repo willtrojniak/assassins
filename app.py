@@ -7,10 +7,13 @@ import dotenv
 
 import users
 
-def create_app() -> flask.Flask:
+def create_app(test_config: dict | None = None) -> flask.Flask:
     app = flask.Flask(__name__)
     dotenv.load_dotenv()
     app.secret_key = os.getenv("FLASK_SECRET")
+    app.config["DATABASE"] = "./data/db.sqlite"
+    if test_config:
+        app.config.update(test_config)
 
     # Register db shutdown funcs
     db.init_app(app)
