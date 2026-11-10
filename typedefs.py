@@ -24,6 +24,12 @@ class User:
     elimination_count: int
 
 @dataclass
+class GameStats:
+    players: int
+    alive: int
+    eliminated: int
+
+@dataclass
 class Log:
     user: str
     target: str

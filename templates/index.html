@@ -13,6 +13,53 @@
   <!--     class="shadow shadow-gray-700 bg-blue-500 font-bold text-white p-2 duration-100 hover:cursor-pointer hover:bg-blue-700 rounded ml-auto">New -->
   <!--     Game</button> -->
   <!-- </form> -->
+  <div class="flex flex-col items-center mb-16 px-4">
+    {% if not account_id %}
+    <form action="{{ url_for('auth.oauth_begin')}}" method="post" class="flex flex-col items-center">
+      <input type="hidden" name="cb" value="" />
+      <i class="text-sm text-gray-600 mb-2">Log in to see your games</i>
+      <button type="submit"
+        class="shadow shadow-gray-700 bg-blue-500 font-bold text-white p-2 duration-100 hover:cursor-pointer hover:bg-blue-700 rounded">
+        Log In </button>
+    </form>
+    {% else %}
+    <div>
+      <h2 class="font-bold text-xl mb-2">My Games</h2>
+      {% if games %}
+      <table class="border border-slate-200 shadow rounded">
+        <thead class="text-left border-b-slate-300 border-b">
+          <th class="p-4">Game</th>
+          <th class="p-4">Status</th>
+          <th class="p-4">Remaining Players</th>
+        </thead>
+        <tbody>
+          {% for url_id, game, user, stats in games %}
+          <tr class="even:bg-slate-200">
+            <td class="p-2">
+              <a href="{{ url_for('game.get_game_handler', game_id_param=url_id) }}" class="underline text-blue-500">{{ game.name }}</a>
+            </td>
+            <td class="p-2">
+              {% if not game.started %}
+              <i class="text-gray-600">Not started</i>
+              {% elif user.eliminated %}
+              <span class="text-red-500">Eliminated</span>
+              {% else %}
+              Alive
+              {% endif %}
+            </td>
+            <td class="p-2 text-right">{{ stats.alive }} / {{ stats.players }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="border border-slate-200 shadow p-4 rounded w-76">
+        <i class="text-sm text-gray-600">You haven't joined any games yet — ask an organizer for a game link.</i>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
   {% include "footer.html" %}
 </body>
 
