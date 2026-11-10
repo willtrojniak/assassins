@@ -11,7 +11,6 @@ CREATE TABLE games (
   started INTEGER NOT NULL DEFAULT 0,
   announcement TEXT,
 
-  FOREIGN KEY(owner_id) REFERENCES users(account_id) ON DELETE SET NULL,
   FOREIGN KEY(uuid, owner_id) REFERENCES users(game_id, account_id)
 );
 
@@ -22,17 +21,17 @@ CREATE TABLE accounts (
 );
 
 CREATE TABLE users (
-  account_id TEXT PRIMARY KEY,
+  account_id TEXT NOT NULL,
   game_id BLOB(16) NOT NULL,
 
   target_user_id TEXT, 
   eliminated INTEGER NOT NULL DEFAULT 0,
   elimination_count INTEGER NOT NULL DEFAULT 0, 
 
-  UNIQUE (game_id, account_id),
+  PRIMARY KEY (game_id, account_id),
   UNIQUE (game_id, target_user_id),
   FOREIGN KEY(account_id) REFERENCES accounts(id) ON DELETE CASCADE,
-  FOREIGN KEY(game_id) REFERENCES games(uuid) ON DELETE CASCADE
+  FOREIGN KEY(game_id) REFERENCES games(uuid) ON DELETE CASCADE,
   FOREIGN KEY(game_id, target_user_id) REFERENCES users(game_id, account_id)
 );
 
@@ -51,8 +50,8 @@ CREATE TABLE logs (
 
   PRIMARY KEY(game_id, target_id),
   FOREIGN KEY(game_id) REFERENCES games(uuid) ON DELETE CASCADE,
-  FOREIGN KEY(user_id) REFERENCES users(account_id) ON DELETE CASCADE,
-  FOREIGN KEY(target_id) REFERENCES users(account_id) ON DELETE CASCADE,
+  FOREIGN KEY(game_id, user_id) REFERENCES users(game_id, account_id) ON DELETE CASCADE,
+  FOREIGN KEY(game_id, target_id) REFERENCES users(game_id, account_id) ON DELETE CASCADE,
   FOREIGN KEY(msg_id) REFERENCES log_messages(id)
 );
 
