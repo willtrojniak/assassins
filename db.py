@@ -1,3 +1,4 @@
+import os
 import random
 import sqlite3
 import uuid
@@ -40,7 +41,9 @@ def init_db(db: sqlite3.Connection) -> None:
     db.commit()
 
 @click.command('init-db')
+@click.confirmation_option(prompt="This deletes ALL games and players. Continue?")
 def init_db_cmd():
+    os.makedirs('./data', exist_ok=True)
     db = get_db()
     init_db(db)
     click.echo("Initialized the database")
