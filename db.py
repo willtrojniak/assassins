@@ -169,11 +169,10 @@ def create_user(game_id: uuid.UUID, account_id: str) -> bool:
         db.execute("""INSERT INTO USERS (account_id, game_id) VALUES (?, ?) """, 
                    (account_id, game_id.bytes))
         db.commit()
-    except sqlite3.IntegrityError as _:
+    except sqlite3.Error as e:
+        print(e)
         db.rollback()
         return False
-    except sqlite3.Error as _:
-        db.rollback()
     return True 
 
 
