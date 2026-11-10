@@ -100,10 +100,10 @@ def login_post_handler(game_id_param: str):
     if (not account_id):
         flask.abort(201, "Unauthorized to register")
 
-    user = users.signup(game_id, account_id)
-    if not user:
-        flask.flash("Sign in failed.", "sign-in")
-        return response
+    try:
+        users.signup(game_id, account_id)
+    except users.SignupError as e:
+        flask.flash(str(e), "sign-in")
 
     return response
 
