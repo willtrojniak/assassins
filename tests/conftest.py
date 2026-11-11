@@ -24,9 +24,9 @@ def app(tmp_path, monkeypatch) -> flask.Flask:
 
 @pytest.fixture
 def make_game(app: flask.Flask):
-    def make(name: str) -> tuple[uuid.UUID, str]:
+    def make(name: str, owner_id: str | None = None) -> tuple[uuid.UUID, str]:
         with app.app_context():
-            game_id = db.create_game(name)
+            game_id = db.create_game(name, owner_id)
         assert game_id
         return game_id, util.uuid_to_str(game_id)
     return make

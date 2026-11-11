@@ -28,11 +28,13 @@
     {% elif target %}
     <span> Your target is: <i>{{ target.name }}</i></span>
     {% endif %}
+    {% elif is_owner %}
+    <span>You are organizing this game</span>
     {% endif %}
     <br />
     {% if not game.started %}
     <i class="font-light underline">The game is still accepting players</i>
-    {% if user and user.id == game.owner %}
+    {% if is_owner %}
     <form action="{{ url_for('game.start_game_handler', game_id_param=id )}}" method="post">
       <button type="submit"
         class="mt-2 shadow shadow-gray-700 bg-blue-500 font-bold text-white p-2 duration-100 hover:cursor-pointer hover:bg-blue-700 rounded">
@@ -73,7 +75,7 @@
         {% else %}
         <i class="text-sm text-gray-600">There are no announcements at this time</i>
         {% endif %}
-        {% if user and user.id == game.owner %}
+        {% if is_owner %}
         <form class="mt-2" action="{{url_for('game.set_announcement_handler', game_id_param=id)}}" method="post">
           <textarea rows="3" name="msg"
             class="border border-slate-300 p-1 mb-4 shadow shadow-gray-400 rounded w-full focus:outline-none"></textarea>
@@ -92,7 +94,7 @@
         <thead class="text-left border-b-slate-300 border-b">
           <th class="p-4">Player</th>
           <th class="p-4">Eliminations</th>
-          {% if user.id == game.owner %}
+          {% if is_owner %}
           <th class="p-4">Actions</th>
           {% endif %}
         </thead>
@@ -107,7 +109,7 @@
             <td class="p-2 text-right">
               {{ u.elimination_count }}
             </td>
-            {% if user and user.id == game.owner and not game.started %}
+            {% if is_owner and not game.started %}
             <td class="p-2">
               <form action="{{ url_for('game.remove_user_handler', game_id_param=id )}}" method="post"
                 data-confirm-title="Remove {{ u.name }} from the game?"
@@ -121,7 +123,7 @@
                 </button>
               </form>
             </td>
-            {% elif user and user.id == game.owner %}
+            {% elif is_owner %}
             <td class="flex gap-1 p-2">
               {% if game.started and not u.eliminated %}
               {% set assassin = users | selectattr('target_user_id', 'equalto', u.id) | first %}

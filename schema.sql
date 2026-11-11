@@ -11,7 +11,7 @@ CREATE TABLE games (
   started INTEGER NOT NULL DEFAULT 0,
   announcement TEXT,
 
-  FOREIGN KEY(uuid, owner_id) REFERENCES users(game_id, account_id)
+  FOREIGN KEY(owner_id) REFERENCES accounts(id) ON DELETE SET NULL
 );
 
 CREATE TABLE accounts (
