@@ -120,7 +120,7 @@ def login_post_handler(game_id_param: str):
         account_id = auth.read_bearer_token(token)
 
     if (not account_id):
-        flask.abort(201, "Unauthorized to register")
+        flask.abort(401, "Unauthorized to register")
 
     try:
         users.signup(game_id, account_id)
@@ -148,7 +148,7 @@ def start_game_handler(game_id_param: str):
         account_id = auth.read_bearer_token(token)
 
     if (not account_id) or account_id != game.owner:
-        flask.abort(201, "Unauthorized to start game")
+        flask.abort(403, "Unauthorized to start game")
 
 
     print(f"Starting game '{game.name}'...")
@@ -175,7 +175,7 @@ def set_announcement_handler(game_id_param: str):
         account_id = auth.read_bearer_token(token)
 
     if (not account_id) or account_id != game.owner:
-        flask.abort(201, "Unauthorized to set game announcement")
+        flask.abort(403, "Unauthorized to set game announcement")
 
 
     db.set_game_announcement(game_id, msg)
@@ -200,7 +200,7 @@ def remove_user_handler(game_id_param: str):
         account_id = auth.read_bearer_token(token)
 
     if game.started or (not account_id) or account_id != game.owner:
-        flask.abort(201, "Unauthorized to remove player")
+        flask.abort(403, "Unauthorized to remove player")
 
 
     db.remove_user(game_id, target_user_id)
@@ -227,7 +227,7 @@ def eliminate_user_target_handler(game_id_param: str):
 
     if (not game.started) or (not account_id) or account_id != game.owner:
         print(f"Account: <{account_id}> attempted to eliminate player")
-        flask.abort(201, "Unauthorized to eliminate player")
+        flask.abort(403, "Unauthorized to eliminate player")
 
 
     db.eliminate_user(game_id, target_user_id, elim_count)
