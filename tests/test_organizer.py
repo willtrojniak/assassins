@@ -40,9 +40,7 @@ def test_owner_can_announce_and_eliminate(app, organized_game):
 def test_players_are_not_owners(organized_game):
     _, url_id, _, clients = organized_game
     assert "Start Game" not in clients["alice"].get(f"/games/{url_id}").data.decode()
-    # Owner checks still call abort(201), which Flask can't map to an error and raises instead
-    with pytest.raises(LookupError):
-        clients["alice"].post(f"/games/{url_id}/start")
+    assert clients["alice"].post(f"/games/{url_id}/start").status_code == 403
 
 def test_first_joiner_is_owner_when_none_set(app, make_game, player):
     game_id, url_id = make_game("One")
@@ -68,3 +66,13 @@ def test_home_lists_organized_games(organized_game, player):
     assert "One" in page
     assert "Organizer" in page
     assert "3 / 3" in page
+
+@pytest.mark.parametrize("path", ["start", "announcement", "delete_user", "eliminate_user"])
+def test_owner_only_routes_forbid_others(organized_game, app, path):
+    _, url_id, _, clients = organized_game
+    assert clients["alice"].post(f"/games/{url_id}/{path}", data={"user_id": "bob"}).status_code == 403
+    assert app.test_client().post(f"/games/{url_id}/{path}", data={"user_id": "bob"}).status_code == 403
+
+def test_register_requires_login(make_game, app):
+    _, url_id = make_game("One")
+    assert app.test_client().post(f"/games/{url_id}/login").status_code == 401
