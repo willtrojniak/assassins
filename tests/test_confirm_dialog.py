@@ -77,3 +77,13 @@ def test_non_owner_has_no_dialog(make_game, player):
     page = bob.get(f"/games/{game}").data.decode()
     assert 'id="confirm-dialog"' not in page
     assert "data-confirm-" not in page
+
+def test_non_playing_organizer_gets_dialog(make_game, player):
+    org = player("org")
+    _, game = make_game("Game", owner_id="org")
+    for name in ("alice", "bob"):
+        player(name).post(f"/games/{game}/login")
+
+    page = org.get(f"/games/{game}").data.decode()
+    assert "data-confirm-title" in page
+    assert 'id="confirm-dialog"' in page
