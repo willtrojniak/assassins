@@ -166,7 +166,7 @@
       </ul>
     </div>
   </div>
-  {% if user and user.id == game.owner %}
+  {% if is_owner %}
   <dialog id="confirm-dialog"
     class="m-auto w-80 max-w-[calc(100%-2rem)] border border-slate-200 shadow p-6 rounded text-gray-800 backdrop:bg-black/50">
     <h2 id="confirm-dialog-title" class="font-bold text-xl mb-2"></h2>
