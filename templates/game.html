@@ -111,7 +111,11 @@
             </td>
             {% if is_owner and not game.started %}
             <td class="p-2">
-              <form action="{{ url_for('game.remove_user_handler', game_id_param=id )}}" method="post">
+              <form action="{{ url_for('game.remove_user_handler', game_id_param=id )}}" method="post"
+                data-confirm-title="Remove {{ u.name }} from the game?"
+                data-confirm-body="They can rejoin before the game starts."
+                data-confirm-label="Remove"
+                data-confirm-variant="neutral">
                 <input type="hidden" name="user_id" value="{{u.id}}" />
                 <button type="submit"
                   class="text-white rounded bg-gray-600 py-1 px-2 hover:cursor-pointer hover:bg-gray-700 duration-100">
@@ -122,13 +126,23 @@
             {% elif is_owner %}
             <td class="flex gap-1 p-2">
               {% if game.started and not u.eliminated %}
-              <form action="{{ url_for('game.eliminate_user_target_handler', game_id_param=id )}}" method="post">
+              {% set assassin = users | selectattr('target_user_id', 'equalto', u.id) | first %}
+              {% set assassin_name = assassin.name if assassin else 'Their assassin' %}
+              <form action="{{ url_for('game.eliminate_user_target_handler', game_id_param=id )}}" method="post"
+                data-confirm-title="Eliminate {{ u.name }}?"
+                data-confirm-body="{{ assassin_name }} will be credited with the kill and receive {{ u.name }}'s target."
+                data-confirm-label="Eliminate"
+                data-confirm-variant="danger">
                 <input type="hidden" name="user_id" value="{{u.id}}" />
                 <input type="hidden" name="elim_count" value="1" />
                 <button type="submit"
                   class="text-white rounded bg-red-700 py-1 px-2 hover:cursor-pointer hover:bg-red-900 duration-100">Eliminate</button>
               </form>
-              <form action="{{ url_for('game.eliminate_user_target_handler', game_id_param=id )}}" method="post">
+              <form action="{{ url_for('game.eliminate_user_target_handler', game_id_param=id )}}" method="post"
+                data-confirm-title="Forfeit {{ u.name }}?"
+                data-confirm-body="{{ assassin_name }} will receive {{ u.name }}'s target but won't be credited with a kill."
+                data-confirm-label="Forfeit"
+                data-confirm-variant="neutral">
                 <input type="hidden" name="user_id" value="{{u.id}}" />
                 <input type="hidden" name="elim_count" value="0" />
                 <button type="submit"
@@ -152,6 +166,53 @@
       </ul>
     </div>
   </div>
+  {% if user and user.id == game.owner %}
+  <dialog id="confirm-dialog"
+    class="m-auto w-80 max-w-[calc(100%-2rem)] border border-slate-200 shadow p-6 rounded text-gray-800 backdrop:bg-black/50">
+    <h2 id="confirm-dialog-title" class="font-bold text-xl mb-2"></h2>
+    <p id="confirm-dialog-body" class="mb-6"></p>
+    <form method="dialog" class="flex justify-end gap-2">
+      <button value="cancel"
+        class="rounded border border-slate-300 py-1 px-2 hover:cursor-pointer hover:bg-slate-100 duration-100">
+        Cancel</button>
+      <button id="confirm-dialog-confirm" value="confirm"
+        class="text-white rounded py-1 px-2 hover:cursor-pointer duration-100"></button>
+    </form>
+  </dialog>
+  <script>
+    (() => {
+      const dialog = document.getElementById("confirm-dialog");
+      const title = document.getElementById("confirm-dialog-title");
+      const body = document.getElementById("confirm-dialog-body");
+      const confirm = document.getElementById("confirm-dialog-confirm");
+      const variants = {
+        danger: ["bg-red-700", "hover:bg-red-900"],
+        neutral: ["bg-gray-600", "hover:bg-gray-700"],
+      };
+      let pending = null;
+
+      document.querySelectorAll("form[data-confirm-title]").forEach((form) => {
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          pending = form;
+          title.textContent = form.dataset.confirmTitle;
+          body.textContent = form.dataset.confirmBody;
+          confirm.textContent = form.dataset.confirmLabel;
+          confirm.classList.remove(...Object.values(variants).flat());
+          confirm.classList.add(...variants[form.dataset.confirmVariant]);
+          dialog.returnValue = "";
+          dialog.showModal();
+        });
+      });
+
+      // form.submit() bypasses the submit listener, so this won't reopen the dialog
+      dialog.addEventListener("close", () => {
+        if (dialog.returnValue === "confirm" && pending) pending.submit();
+        pending = null;
+      });
+    })();
+  </script>
+  {% endif %}
   {% include "footer.html" %}
 </body>
 
